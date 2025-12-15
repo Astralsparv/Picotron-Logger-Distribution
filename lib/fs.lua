@@ -56,6 +56,40 @@ do
 
 	local _yield = yield
 
+	local opts=fetch("/appdata/system/logger.pod")
+	local logs={fetch=opts.fetch.active,store=opts.store.active,ignoreWindowStore=opts.store.ignoreWindow}
+
+	local system_log=function(str,args)
+		local s=stat(987)/1000
+		local m=flr(s/60)
+		local h=flr(m/60)
+		m-=h*60
+		s-=m*60
+		s=flr(s*100)/100
+
+		local tim=""
+		if (h!=0) then
+			tim=h.."h:"..m.."m "..s.."s"
+		elseif (m!=0) then
+			tim=m.."m "..s.."s"
+		else
+			tim=s.."s"
+		end
+
+		if (args) then
+			if (#args > 0) then
+				for i=1, #args do
+					if (type(args[i]=="table")) then
+						str..=pod(args[i])
+					else
+						str..=args[i]
+					end
+					if (i!=#args) str..=","
+				end
+			end
+		end
+		_printh(tim.." ** "..str)
+	end
 	-- fileview can be extended via request_file_access messages
 	local fileview = unpod(pod(_env().fileview))
 
@@ -1053,7 +1087,7 @@ do
 	-- return obj, metadata, err_str
 	local fetch_job = nil
 	function fetch(location, options)
-
+		system_log("fetch: ",{location,options})
 		if (type(location) != "string") return nil, nil, "location is not a string"
 
 		if (type(options) ~= "table") options = {}
@@ -1180,7 +1214,9 @@ do
 
 	-- to do: errors
 	function store(location, obj, meta)
-
+		if (not (location=="/ram/shared/windows.pod" and logs.ignoreWindowStore)) then
+			system_log("store",{location,obj,meta})
+		end
 		if (type(location) != "string") return nil
 
 		-- currently no writeable protocols

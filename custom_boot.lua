@@ -5,7 +5,37 @@
 ]]
 
 
+local system_log=function(str,args)
+	local s=stat(987)/1000
+	local m=flr(s/60)
+	local h=flr(m/60)
+	m-=h*60
+	s-=m*60
+	s=flr(s*100)/100
 
+	local tim=""
+	if (h!=0) then
+		tim=h.."h:"..m.."m "..s.."s"
+	elseif (m!=0) then
+		tim=m.."m "..s.."s"
+	else
+		tim=s.."s"
+	end
+
+	if (args) then
+		if (#args > 0) then
+			for i=1, #args do
+				if (type(args[i]=="table")) then
+					str..=pod(args[i])
+				else
+					str..=args[i]
+				end
+				if (i!=#args) str..=","
+			end
+		end
+	end
+	_printh(tim.." ** "..str)
+end
 
 
 -- allowed to assume / and /ram is mounted before boot.lua is run
@@ -27,6 +57,14 @@ mkdir("/appdata/system")
 mkdir("/appdata/system/desktop2") -- for the tooltray
 mkdir("/appdata/bbs")
 mkdir("/appdata/shared") -- anyone can write (bbs carts can communicate with each other)
+
+-- logger options
+local logOptions=fetch("/appdata/system/logger.pod") or {}
+if (logOptions.cpu==nil) logOptions.cpu={active=false,shorten=true,show_process_name=true}
+if (logOptions.store==nil) logOptions.store={active=true,ignoreWindow=true}
+if (logOptions.fetch==nil) logOptions.fetch={active=true}
+if (logOptions.gapPerFrame==nil) logOptions.gapPerFrame=true
+store("/appdata/system/logger.pod",logOptions)
 
 
 -- 0.2.0c: quit early (yielding causes kernal runtime error) if can not read /desktop or /appdata
@@ -108,11 +146,20 @@ function run_userland_processes(allotment)
 	-- assign cpu share
 	local total_cpu_share = 0
 	for i=1,#pl do
+		if (logOptions.cpu) then
+			local cpu=pl[i].cpu
+			if (logOptions.cpu.shorten) cpu=flr(cpu*100)/100
+			local label="["..pl[i].id
+			if (logOptions.cpu.show_process_name) label..=" "..pl[i].name
+			label..="]"
+			system_log(label.." CPU: "..cpu*100 .."%")
+		end
 		-- to do: observe signal 43? proably don't need that mechanism (temporary high priority)
 		local pri = pl[i].priority
 		pl[i].cpu_share  = pri
 		total_cpu_share += pri
 	end
+	if (logOptions.gapPerFrame) _printh("")
 
 	-- round: might not make any progress towards zero -- e.g. if still a tiny bit of cpu left
 	-- that rounds down to 0 cycles; or for some other anomolous reason a process keeps returning
