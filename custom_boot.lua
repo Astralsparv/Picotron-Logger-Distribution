@@ -63,7 +63,7 @@ local logOptions=fetch("/appdata/system/logger.pod") or {}
 if (logOptions.cpu==nil) logOptions.cpu={active=false,shorten=true,show_process_name=true}
 if (logOptions.store==nil) logOptions.store={active=true,ignoreWindow=true}
 if (logOptions.fetch==nil) logOptions.fetch={active=true}
-if (logOptions.gapPerFrame==nil) logOptions.gapPerFrame=true
+if (logOptions.gapPerFrame==nil) logOptions.gapPerFrame=false --good for cpu logging
 store("/appdata/system/logger.pod",logOptions)
 
 
