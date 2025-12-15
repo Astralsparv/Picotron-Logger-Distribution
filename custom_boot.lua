@@ -146,7 +146,7 @@ function run_userland_processes(allotment)
 	-- assign cpu share
 	local total_cpu_share = 0
 	for i=1,#pl do
-		if (logOptions.cpu) then
+		if (logOptions.cpu.active) then
 			local cpu=pl[i].cpu
 			if (logOptions.cpu.shorten) cpu=flr(cpu*100)/100
 			local label="["..pl[i].id
